@@ -1,0 +1,4 @@
+# Ingestion runtime dependencies. Kept tiny on purpose — the heavy lifting
+# (modeling, joins, aggregation) happens in dbt/Athena, not here.
+pyarrow>=14.0.0
+boto3>=1.34.0

@@ -1,0 +1,47 @@
+version: 2
+
+models:
+  - name: int_trips_valid
+    description: Silver — conformed trips that passed every quality check.
+    columns:
+      - name: trip_id
+        data_tests:
+          - not_null
+          - unique
+      - name: pu_location_id
+        description: FK to the zone dimension (guaranteed in range by the silver checks).
+        data_tests:
+          - not_null
+          - relationships:
+              to: ref('stg_taxi_zones')
+              field: location_id
+      - name: do_location_id
+        data_tests:
+          - not_null
+          - relationships:
+              to: ref('stg_taxi_zones')
+              field: location_id
+      - name: payment_type
+        data_tests:
+          - relationships:
+              to: ref('payment_type_lookup')
+              field: payment_type
+      - name: trip_distance_mi
+        data_tests:
+          - dbt_utils.accepted_range: { min_value: 0, max_value: 1000, inclusive: false }
+      - name: trip_duration_min
+        data_tests:
+          - dbt_utils.accepted_range: { min_value: 0, max_value: 1440, inclusive: true }
+      - name: passenger_count
+        data_tests:
+          - dbt_utils.accepted_range: { min_value: 1, max_value: 9, inclusive: true }
+
+  - name: int_trips_quarantined
+    description: Silver — trips that failed a quality check, with the reason.
+    columns:
+      - name: trip_id
+        data_tests:
+          - not_null
+      - name: quality_reason
+        data_tests:
+          - not_null

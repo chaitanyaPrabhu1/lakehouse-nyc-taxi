@@ -1,0 +1,7 @@
+{
+  "trips_base_url": "https://d37ci6vzurychx.cloudfront.net/trip-data",
+  "zones_url": "https://d37ci6vzurychx.cloudfront.net/misc/taxi_zone_lookup.csv",
+  "dataset": "yellow",
+  "months": ["2024-01"],
+  "sample_rows": 50000
+}

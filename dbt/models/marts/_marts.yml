@@ -1,0 +1,178 @@
+version: 2
+
+models:
+  # ----------------------------- dimensions ------------------------------- #
+  - name: dim_zone
+    description: One row per TLC taxi zone (the location dimension).
+    columns:
+      - name: zone_id
+        description: Primary key (TLC LocationID).
+        data_tests:
+          - not_null
+          - unique
+          - dbt_utils.accepted_range: { min_value: 1, max_value: 265, inclusive: true }
+      - name: borough
+        data_tests:
+          - not_null
+      - name: zone_name
+        data_tests:
+          - not_null
+
+  - name: dim_payment_type
+    description: Payment-type dimension.
+    columns:
+      - name: payment_type_id
+        data_tests:
+          - not_null
+          - unique
+      - name: payment_type_desc
+        data_tests:
+          - not_null
+
+  - name: dim_rate_code
+    description: Rate-code dimension.
+    columns:
+      - name: rate_code_id
+        data_tests:
+          - not_null
+          - unique
+      - name: rate_code_desc
+        data_tests:
+          - not_null
+
+  - name: dim_vendor
+    description: Vendor dimension.
+    columns:
+      - name: vendor_id
+        data_tests:
+          - not_null
+          - unique
+      - name: vendor_name
+        data_tests:
+          - not_null
+
+  - name: dim_date
+    description: Daily calendar dimension covering the ingested range.
+    columns:
+      - name: date_day
+        data_tests:
+          - not_null
+          - unique
+      - name: day_of_week
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range: { min_value: 1, max_value: 7, inclusive: true }
+      - name: month
+        data_tests:
+          - dbt_utils.accepted_range: { min_value: 1, max_value: 12, inclusive: true }
+      - name: is_weekend
+        data_tests:
+          - not_null
+          - accepted_values: { values: [true, false], quote: false }
+
+  # ------------------------------- facts ---------------------------------- #
+  - name: fct_trips
+    description: >
+      Fact table, one row per valid taxi trip (grain = trip_id). Star schema:
+      FKs resolve to dim_zone (x2), dim_payment_type, dim_rate_code, dim_vendor,
+      dim_date.
+    columns:
+      - name: trip_id
+        data_tests:
+          - not_null
+          - unique
+      - name: pu_location_id
+        description: FK to dim_zone.
+        data_tests:
+          - not_null
+          - relationships:
+              to: ref('dim_zone')
+              field: zone_id
+      - name: do_location_id
+        description: FK to dim_zone.
+        data_tests:
+          - not_null
+          - relationships:
+              to: ref('dim_zone')
+              field: zone_id
+      - name: payment_type_id
+        description: FK to dim_payment_type.
+        data_tests:
+          - not_null
+          - relationships:
+              to: ref('dim_payment_type')
+              field: payment_type_id
+      - name: rate_code_id
+        description: FK to dim_rate_code.
+        data_tests:
+          - not_null
+          - relationships:
+              to: ref('dim_rate_code')
+              field: rate_code_id
+      - name: vendor_id
+        description: FK to dim_vendor.
+        data_tests:
+          - not_null
+          - relationships:
+              to: ref('dim_vendor')
+              field: vendor_id
+      - name: pickup_date
+        data_tests:
+          - not_null
+      - name: pickup_at
+        data_tests:
+          - not_null
+      - name: passenger_count
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range: { min_value: 1, max_value: 9, inclusive: true }
+      - name: trip_distance_mi
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range: { min_value: 0, max_value: 1000, inclusive: false }
+      - name: trip_duration_min
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range: { min_value: 0, max_value: 1440, inclusive: true }
+      - name: total_amount
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range: { min_value: 0, max_value: 100000, inclusive: false }
+    # Trip-level integrity: dropoff is always after pickup.
+    data_tests:
+      - dbt_utils.expression_is_true:
+          expression: "dropoff_at > pickup_at"
+
+  # ----------------------------- aggregates ------------------------------- #
+  - name: agg_trips_daily
+    description: Daily trip + revenue summary (one row per calendar day).
+    columns:
+      - name: pickup_date
+        data_tests:
+          - not_null
+          - unique
+      - name: trip_count
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range: { min_value: 0, inclusive: true }
+      - name: total_revenue
+        data_tests:
+          - not_null
+
+  - name: agg_revenue_by_zone
+    description: Revenue + demand per pickup zone (gold mart).
+    columns:
+      - name: zone_id
+        data_tests:
+          - not_null
+          - unique
+          - relationships:
+              to: ref('dim_zone')
+              field: zone_id
+      - name: trip_count
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range: { min_value: 1, inclusive: true }
+      - name: total_revenue
+        data_tests:
+          - not_null

@@ -1,0 +1,8 @@
+# Copy to terraform.tfvars and fill in. `terraform apply` picks it up automatically.
+
+project = "nyc-taxi"
+region  = "us-east-1"
+
+# Optional: email for the billing alarm (leave "" to skip).
+alarm_email            = ""
+monthly_cost_alarm_usd = 5

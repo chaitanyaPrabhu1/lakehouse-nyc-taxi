@@ -1,0 +1,38 @@
+version: 2
+
+seeds:
+  - name: payment_type_lookup
+    description: >
+      Payment-type codes from the TLC data dictionary. Reference data for
+      dim_payment_type and the payment_type relationship test on fct_trips.
+    columns:
+      - name: payment_type
+        description: Numeric code as it appears in the trip records.
+        data_tests:
+          - not_null
+          - unique
+      - name: payment_type_desc
+        data_tests:
+          - not_null
+
+  - name: rate_code_lookup
+    description: Rate-code descriptions from the TLC data dictionary.
+    columns:
+      - name: rate_code_id
+        data_tests:
+          - not_null
+          - unique
+      - name: rate_code_desc
+        data_tests:
+          - not_null
+
+  - name: vendor_lookup
+    description: TPEP vendor (LPEP for green) codes from the TLC data dictionary.
+    columns:
+      - name: vendor_id
+        data_tests:
+          - not_null
+          - unique
+      - name: vendor_name
+        data_tests:
+          - not_null

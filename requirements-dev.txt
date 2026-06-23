@@ -1,0 +1,20 @@
+# Local development + test dependencies (not a Lambda runtime — this project
+# runs ingestion as a plain script / container, not on Lambda).
+pyarrow>=14.0.0
+boto3>=1.34.0
+pytest>=8.0.0
+moto[s3]>=5.0.0
+# dbt + the Athena adapter (the warehouse builder). Pulls in dbt-core.
+dbt-athena-community>=1.10.0,<1.12.0
+
+# --- Python 3.14 note ---------------------------------------------------------
+# dbt officially supports Python 3.9–3.13. On 3.13 or lower the line above
+# installs cleanly. On Python 3.14 (no prebuilt wheels yet) two extra steps are
+# needed and are NOT encoded here because they'd break installs on supported
+# Pythons:
+#   1. `mmh3` compiles from source -> needs the Python dev headers (Python.h).
+#      Install `python3-dev` (or extract the matching libpython*-dev .deb and
+#      put its include dirs on $CPATH) before installing.
+#   2. dbt pins mashumaro<3.15, which fails to generate code on 3.14. Install a
+#      newer one afterwards:  pip install "mashumaro>=3.16"  (works despite the
+#      pip resolver warning).

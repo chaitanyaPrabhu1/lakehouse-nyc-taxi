@@ -1,0 +1,51 @@
+version: 2
+
+models:
+  - name: stg_yellow_trips
+    description: >
+      Silver: one typed, de-duplicated, quality-flagged row per yellow-taxi
+      trip. No rows are dropped here — `is_valid` / `quality_reason` carry the
+      verdict downstream.
+    columns:
+      - name: trip_id
+        description: Surrogate key (hash of the immutable trip attributes).
+        data_tests:
+          - not_null
+          - unique
+      - name: vendor_id
+        data_tests:
+          - not_null
+      - name: pickup_at
+        data_tests:
+          - not_null
+      - name: dropoff_at
+        data_tests:
+          - not_null
+      - name: pickup_date
+        data_tests:
+          - not_null
+      - name: trip_distance_mi
+        data_tests:
+          - not_null
+      - name: total_amount
+        data_tests:
+          - not_null
+      - name: is_valid
+        description: True when every data-quality check passed.
+        data_tests:
+          - not_null
+          - accepted_values:
+              values: [true, false]
+              quote: false
+
+  - name: stg_taxi_zones
+    description: Silver zone lookup, typed and conformed.
+    columns:
+      - name: location_id
+        data_tests:
+          - not_null
+          - unique
+          - dbt_utils.accepted_range: { min_value: 1, max_value: 265, inclusive: true }
+      - name: borough
+        data_tests:
+          - not_null

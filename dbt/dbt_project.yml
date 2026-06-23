@@ -1,0 +1,51 @@
+name: nyc_taxi
+version: "1.0.0"
+config-version: 2
+
+profile: nyc_taxi
+
+model-paths: ["models"]
+seed-paths: ["seeds"]
+macro-paths: ["macros"]
+test-paths: ["tests"]
+analysis-paths: ["analyses"]
+snapshot-paths: ["snapshots"]
+
+target-path: target
+clean-targets:
+  - target
+  - dbt_packages
+
+# Medallion architecture mapped onto dbt's staging -> intermediate -> marts.
+#
+#   bronze  = the raw TLC data landed in S3 and cataloged by Glue (dbt SOURCES)
+#   silver  = staging + intermediate: typed, conformed, quality-flagged
+#   gold    = marts: dimensional model (facts, dims, aggregates) for analytics
+#
+# dbt-athena materializes results back to S3 and registers them in Glue.
+models:
+  nyc_taxi:
+    staging:
+      +materialized: view
+      +schema: silver
+    intermediate:
+      +materialized: view
+      +schema: silver
+    marts:
+      +materialized: table
+      +schema: gold
+      +format: parquet
+
+seeds:
+  nyc_taxi:
+    +schema: silver
+    +quote_columns: false
+
+vars:
+  # Plausibility bounds the silver layer uses to flag bad trips.
+  max_trip_duration_min: 1440   # 24h
+  max_trip_distance_mi: 1000
+  max_passenger_count: 9
+  # Calendar range for dim_date — widen to cover every month you ingest.
+  date_spine_start: "2024-01-01"
+  date_spine_end: "2025-01-01"

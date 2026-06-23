@@ -1,0 +1,48 @@
+version: 2
+
+sources:
+  - name: nyc_taxi_bronze
+    description: >
+      Bronze zone — the raw NYC TLC data landed in S3 by the ingestion job and
+      cataloged by the Glue crawler. Normalized to a stable schema at ingest
+      time, but otherwise untouched (this is the immutable, replayable copy).
+    database: awsdatacatalog
+    schema: "{{ env_var('GLUE_DATABASE', 'nyc_taxi') }}"
+    tables:
+      - name: yellow_trips
+        description: Monthly yellow-taxi trip records, partitioned by year/month.
+        # The pipeline's heartbeat: alert if no new month has landed.
+        loaded_at_field: ingested_at
+        freshness:
+          warn_after: { count: 40, period: day }
+          error_after: { count: 90, period: day }
+        columns:
+          - name: vendor_id
+            data_tests:
+              - not_null
+          - name: tpep_pickup_datetime
+            data_tests:
+              - not_null
+          - name: tpep_dropoff_datetime
+            data_tests:
+              - not_null
+          - name: pu_location_id
+            data_tests:
+              - not_null
+          - name: do_location_id
+            data_tests:
+              - not_null
+
+      - name: taxi_zones
+        description: TLC taxi-zone lookup (LocationID -> borough/zone/service_zone).
+        columns:
+          - name: location_id
+            data_tests:
+              - not_null
+              - unique
+          - name: borough
+            data_tests:
+              - not_null
+          - name: zone
+            data_tests:
+              - not_null
